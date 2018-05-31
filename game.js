@@ -264,6 +264,8 @@ const game = {
 
             }
 
+            //delete this.snake.tail[this.snake.tail.length]
+
             var collided = false
             // check if we collide with ourself
             for (var i in this.snake.tail) {
@@ -278,10 +280,18 @@ const game = {
             }
 
             if (!collided) {
+
                 this.snake.tail[this.snake.tail.length] = {
                     x: this.snake.x,
                     y: this.snake.y
                 }
+
+                if (this.field[this.snake.x][this.snake.y]) { // i ate smthing
+
+                } else { // i moved
+                    this.snake.tail.shift()
+                }
+
             }
 
         }
@@ -300,6 +310,8 @@ const game = {
             this.drawSnakeDot(item.x, item.y)
 
         }
+
+        console.log('Tail: ' + this.snake.tail.length)
 
     },
 
