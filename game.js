@@ -1,8 +1,6 @@
 window.onload = function () {
 
-    game.start({
-
-    })
+    game.init({}).start()
 
 }
 
@@ -13,18 +11,82 @@ const game = {
         cols: 100,
         rows: 75,
         speed: 0.1,
-
         minLimit: 2,
         maxLimit: 3,
         resolution: 10,
+        dotColor: 'black',
+
+        snakeSpeed: 0.05,
+        snakeColor: 'yellow',
 
     },
 
+    snake: {
+        x: 0,
+        y: 0,
+        direction: '',
+        tail: []
+    },
     field: [],
     canvas: null,
     ctx: null,
+    snakeCtx: null,
     dotCount: 0,
     interval: null,
+
+    init: function (conf) {
+
+        this.conf = Object.assign(this.conf, conf)
+
+        this.wireEvents()
+
+        return this
+
+    },
+
+    wireEvents: function () {
+
+        const self = this
+
+        document.onkeydown = function (e) {
+
+            var keyCode = e.keyCode || e.which,
+                arrow = {
+                    left: 37,
+                    up: 38,
+                    right: 39,
+                    down: 40
+                }
+
+            switch (keyCode) {
+                case
+                arrow.up:
+                    if (self.snake.direction != 'down') {
+                        self.snake.direction = 'up'
+                    }
+                    break;
+                case
+                arrow.down:
+                    if (self.snake.direction != 'up') {
+                        self.snake.direction = 'down'
+                    }
+                    break;
+                case
+                arrow.left:
+                    if (self.snake.direction != 'right') {
+                        self.snake.direction = 'left'
+                    }
+                    break;
+                case
+                arrow.right:
+                    if (self.snake.direction != 'left') {
+                        self.snake.direction = 'right'
+                    }
+                    break;
+            }
+        };
+
+    },
 
     pause: function () {
         clearInterval(this.interval)
@@ -53,8 +115,6 @@ const game = {
     },
 
     start: function (conf) {
-
-        this.conf = Object.assign(this.conf, conf)
 
         this.canvas = document.getElementById("field");
         this.ctx = this.canvas.getContext("2d");
@@ -95,7 +155,9 @@ const game = {
             self.runFrame()
         }, self.conf.speed * 1000)
 
-
+        this.snakeInterval = setInterval(function () {
+            self.moveSnake()
+        }, self.conf.snakeSpeed * 1000)
     },
 
     countNeighbours(grid, x, y) {
@@ -136,7 +198,22 @@ const game = {
                 if (!this.field[x][y] && count == this.conf.maxLimit) {
                     field[x][y] = 1
                 } else if (this.field[x][y] && (count < this.conf.minLimit || count > this.conf.maxLimit)) {
+
                     field[x][y] = 0
+                    // check if there is snake part, if so, remove
+
+                    var broke = false;
+                    for (var i in this.snake.tail) {
+                        var item = this.snake.tail[i]
+
+                        if (broke || (item.x == x && item.y == y)) {
+                            // delete this.snake.tail[i]
+                            //broke = true
+                        }
+
+                    }
+
+
                 } else {
                     field[x][y] = this.field[x][y]
                 }
@@ -145,15 +222,91 @@ const game = {
 
         this.field = field;
         this.drawField(this.field)
+
+        // draw snake
+        for (var i in this.snake.tail) {
+
+            var item = this.snake.tail[i]
+            this.drawSnakeDot(item.x, item.y)
+
+        }
+
         var endDotCount = this.dotCount
 
-        console.log('Dot count: ' + this.dotCount + " Diff: " + (endDotCount - startDotCount).toFixed())
+        // console.log('Dot count: ' + this.dotCount + " Diff: " + (endDotCount - startDotCount).toFixed())
+
+    },
+
+    moveSnake: function () {
+
+        // move snake
+        if (this.snake.direction) {
+
+            if (this.snake.direction == 'right') {
+
+                this.snake.x += 1;
+                this.snake.x = this.snake.x > this.conf.cols ? 0 : this.snake.x
+
+            } else if (this.snake.direction == 'left') {
+
+                this.snake.x -= 1;
+                this.snake.x = this.snake.x < 0 ? this.conf.cols : this.snake.x
+
+            } else if (this.snake.direction == 'up') {
+                this.snake.y -= 1;
+                this.snake.y = this.snake.y < 0 ? this.conf.rows : this.snake.y
+
+
+            } else if (this.snake.direction == 'down') {
+
+                this.snake.y += 1;
+                this.snake.y = this.snake.y > this.conf.rows ? 0 : this.snake.y
+
+            }
+
+            var collided = false
+            // check if we collide with ourself
+            for (var i in this.snake.tail) {
+                var item = this.snake.tail[i]
+
+                if (item.x == this.snake.x && item.y == this.snake.y) {
+                    this.snake.tail = []
+                    collided = true
+                    break
+                }
+
+            }
+
+            if (!collided) {
+                this.snake.tail[this.snake.tail.length] = {
+                    x: this.snake.x,
+                    y: this.snake.y
+                }
+            }
+
+        }
+
+        // draw snake
+
+        // draw head
+
+        this.field[this.snake.x][this.snake.y] = 1;
+        this.drawSnakeDot(this.snake.x, this.snake.y)
+
+        // draw tail
+        for (var i in this.snake.tail) {
+
+            var item = this.snake.tail[i]
+            this.drawSnakeDot(item.x, item.y)
+
+        }
 
     },
 
     drawField: function (field) {
 
         var dotCount = 0;
+        this.ctx.fillStyle = this.conf.dotColor
 
         for (var x in field) {
             for (var y in field[x]) {
@@ -169,6 +322,28 @@ const game = {
         }
 
         this.dotCount = dotCount
+
+    },
+
+    removeTailItem: function (x, y) {
+
+        for (var i in this.snake.tail) {
+
+            var item = this.snake.tail[i]
+
+
+
+        }
+
+
+
+    },
+
+    drawSnakeDot: function (x, y) {
+
+        color = this.conf.snakeColor
+        this.ctx.fillStyle = 'yellow';
+        this.ctx.fillRect(x * this.conf.resolution, y * this.conf.resolution, 1 * this.conf.resolution, 1 * this.conf.resolution)
 
     },
 
