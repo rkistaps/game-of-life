@@ -1,6 +1,8 @@
 window.onload = function () {
 
-    game.init({}).start()
+    game.init({
+
+    }).start()
 
 }
 
@@ -14,10 +16,10 @@ const game = {
         minLimit: 2,
         maxLimit: 3,
         resolution: 10,
-        dotColor: 'black',
-
+        dotColor: '#89aa9e',
+        fieldColor: '#193549',
         snakeSpeed: 0.05,
-        snakeColor: 'yellow',
+        snakeColor: '#a5ff90',
 
     },
 
@@ -118,6 +120,8 @@ const game = {
 
         this.canvas = document.getElementById("field");
         this.ctx = this.canvas.getContext("2d");
+
+        this.canvas.style.backgroundColor = this.conf.fieldColor
 
         this.canvas.setAttribute('width', this.conf.cols * this.conf.resolution)
         this.canvas.setAttribute('height', this.conf.rows * this.conf.resolution)
@@ -272,7 +276,8 @@ const game = {
                 var item = this.snake.tail[i]
 
                 if (item.x == this.snake.x && item.y == this.snake.y) {
-                    this.snake.tail = []
+
+                    this.deleteSnake(this.snake)
                     collided = true
                     break
                 }
@@ -312,6 +317,20 @@ const game = {
         }
 
         console.log('Tail: ' + this.snake.tail.length)
+
+    },
+
+    // turn into dots
+    deleteSnake: function (snake) {
+
+        for (var i in snake.tail) {
+
+            var item = this.snake.tail[i]
+            this.field[item.x][item.y] = 1
+
+        }
+
+        snake.tail = []
 
     },
 
