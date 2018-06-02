@@ -1,6 +1,8 @@
 window.onload = function () {
 
     game.init({
+        // dotColor: 'black',
+        // fieldColor: 'red'
 
     }).start()
 
@@ -12,7 +14,7 @@ const game = {
         startingDotCount: 50,
         cols: 100,
         rows: 75,
-        speed: 0.1,
+        speed: 0.05,
         minLimit: 2,
         maxLimit: 3,
         resolution: 10,
@@ -20,6 +22,9 @@ const game = {
         fieldColor: '#193549',
         snakeSpeed: 0.05,
         snakeColor: '#a5ff90',
+        botSnakeColor: 'black',
+        botSnakeCount: 2,
+        botReaction: 0.1
 
     },
 
@@ -29,6 +34,9 @@ const game = {
         direction: '',
         tail: []
     },
+
+    snakes: [],
+    tails: [],
     field: [],
     canvas: null,
     ctx: null,
@@ -40,10 +48,217 @@ const game = {
 
         this.conf = Object.assign(this.conf, conf)
 
+        this.canvas = document.getElementById("field");
+        this.ctx = this.canvas.getContext("2d");
+
+        this.canvas.style.backgroundColor = this.conf.fieldColor
+
+        this.canvas.setAttribute('width', this.conf.cols * this.conf.resolution)
+        this.canvas.setAttribute('height', this.conf.rows * this.conf.resolution)
+
+        var dots = []
+
+        // fill field
+        for (var x = 0; x < this.conf.cols; x++) {
+            if (typeof this.field[x] == 'undefined') this.field[x] = []
+            for (var y = 0; y < this.conf.rows; y++) {
+                if (typeof this.field[x][y] == 'undefined') this.field[x][y] = Math.round(Math.random())
+            }
+        }
+
+
+
+        this.drawField(this.field)
+
         this.wireEvents()
+
+        // create bot snakes
+        for (var i = 0; i < this.conf.botSnakeCount; i++) {
+            snake = this.createSnake()
+            snake.bot = 1
+            this.snakes.push(snake)
+        }
+
+        this.snakes.push(this.snake)
 
         return this
 
+    },
+
+    start: function (conf) {
+
+        const self = this
+
+        this.interval = setInterval(function () {
+            self.runFrame()
+        }, self.conf.speed * 1000)
+
+        this.snakeInterval = setInterval(function () {
+            self.moveSnakes()
+        }, self.conf.snakeSpeed * 1000)
+
+        this.snakeInterval = setInterval(function () {
+            self.processBots()
+        }, self.conf.botReaction * 1000)
+
+    },
+
+    processBots: function () {
+
+        this.snakes.forEach(snake => {
+
+            if (snake.bot) {
+
+                if (snake.direction) {
+
+                    if (snake.direction == 'right') {
+
+                        var x = this.fixXCoord(snake.x + 1);
+                        if (!this.isSnakeFree(x, snake.y)) {
+
+                            var y = this.fixYCoord(snake.y + 1)
+                            if (this.isSnakeFree(x, y)) { // up
+                                snake.direction = 'up'
+                            } else { // down
+                                snake.direction = 'down'
+                            }
+
+                        } else {
+                            if (this.rand(1, 10) > 7) {
+
+                                if (this.rand(0, 1)) {
+                                    snake.direction = 'up'
+                                } else {
+                                    snake.direction = 'down'
+                                }
+
+                            }
+                        }
+
+                    } else if (snake.direction == 'left') {
+
+                        var x = this.fixXCoord(snake.x - 1);
+                        if (!this.isSnakeFree(x, snake.y)) {
+
+                            var y = this.fixYCoord(snake.y + 1)
+                            if (this.isSnakeFree(x, y)) { // up
+                                snake.direction = 'up'
+                            } else { // down
+                                snake.direction = 'down'
+                            }
+
+                        } else {
+                            if (this.rand(1, 10) > 7) {
+
+                                if (this.rand(0, 1)) {
+                                    snake.direction = 'up'
+                                } else {
+                                    snake.direction = 'down'
+                                }
+
+                            }
+                        }
+
+                    } else if (snake.direction == 'down') {
+
+                        var y = this.fixYCoord(snake.y - 1)
+                        if (!this.isSnakeFree(snake.x, y)) {
+
+                            var x = this.fixXCoord(snake.x + 1)
+                            if (this.isSnakeFree(x, y)) {
+                                snake.direction = 'right'
+                            } else {
+                                snake.direction = 'left'
+                            }
+
+                        } else {
+                            if (this.rand(1, 10) > 7) {
+
+                                if (this.rand(0, 1)) {
+                                    snake.direction = 'right'
+                                } else {
+                                    snake.direction = 'left'
+                                }
+
+                            }
+                        }
+
+                    } else if (snake.direction == 'up') {
+
+                        var y = this.fixYCoord(snake.y + 1)
+                        if (!this.isSnakeFree(snake.x, y)) {
+
+                            var x = this.fixXCoord(snake.x + 1)
+                            if (this.isSnakeFree(x, y)) {
+                                snake.direction = 'right'
+                            } else {
+                                snake.direction = 'left'
+                            }
+
+                        } else {
+                            if (this.rand(1, 10) > 7) {
+
+                                if (this.rand(0, 1)) {
+                                    snake.direction = 'right'
+                                } else {
+                                    snake.direction = 'left'
+                                }
+
+                            }
+                        }
+
+                    }
+
+
+                } else {
+
+                    dir = this.rand(1, 4)
+                    switch (dir) {
+                        case 1:
+                            snake.direction = 'right'
+                            break;
+                        case 2:
+                            snake.direction = 'down'
+                            break;
+                        case 3:
+                            snake.direction = 'left'
+                            break;
+
+                        case 4:
+                            snake.direction = 'up'
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+
+            }
+
+        });
+
+    },
+
+    fixXCoord: function (x) {
+
+        var x = x > this.conf.cols - 1 ? 0 : x
+        x = x < 0 ? this.conf.cols - 1 : x
+
+        return x
+
+    },
+
+    fixYCoord: function (y) {
+
+        var y = y < 0 ? this.conf.rows - 1 : y
+        y = y > this.conf.rows ? 0 : y
+
+        return y
+
+    },
+
+    rand: function (from, to) {
+        return Math.round(from + Math.random() * to)
     },
 
     wireEvents: function () {
@@ -67,23 +282,27 @@ const game = {
                         self.snake.direction = 'up'
                     }
                     break;
+                    e.preventDefault()
                 case
                 arrow.down:
                     if (self.snake.direction != 'up') {
                         self.snake.direction = 'down'
                     }
                     break;
+                    e.preventDefault()
                 case
                 arrow.left:
                     if (self.snake.direction != 'right') {
                         self.snake.direction = 'left'
                     }
+                    e.preventDefault()
                     break;
                 case
                 arrow.right:
                     if (self.snake.direction != 'left') {
                         self.snake.direction = 'right'
                     }
+                    e.preventDefault()
                     break;
             }
         };
@@ -116,54 +335,6 @@ const game = {
 
     },
 
-    start: function (conf) {
-
-        this.canvas = document.getElementById("field");
-        this.ctx = this.canvas.getContext("2d");
-
-        this.canvas.style.backgroundColor = this.conf.fieldColor
-
-        this.canvas.setAttribute('width', this.conf.cols * this.conf.resolution)
-        this.canvas.setAttribute('height', this.conf.rows * this.conf.resolution)
-
-        const self = this
-
-        var dots = []
-
-        // fill field
-        for (var x = 0; x < this.conf.cols; x++) {
-            if (typeof this.field[x] == 'undefined') this.field[x] = []
-            for (var y = 0; y < this.conf.rows; y++) {
-                if (typeof this.field[x][y] == 'undefined') this.field[x][y] = Math.round(Math.random())
-            }
-        }
-
-        // for (var i = 1; i <= this.conf.startingDotCount; i++) {
-
-        //     var x = Math.floor(Math.random() * Math.floor(this.conf.cols) + 1)
-        //     var y = Math.floor(Math.random() * Math.floor(this.conf.rows) + 1)
-
-        //     x = x > 0 ? x : 1;
-        //     y = y > 0 ? y : 1;
-
-        //     x = x > this.conf.cols ? this.conf.cols : x;
-        //     y = y > this.conf.rows ? this.conf.rows : y;
-
-        //     this.filldot(this.field, x, y)
-
-        // }
-
-        this.drawField(this.field)
-
-        this.interval = setInterval(function () {
-            self.runFrame()
-        }, self.conf.speed * 1000)
-
-        this.snakeInterval = setInterval(function () {
-            self.moveSnake()
-        }, self.conf.snakeSpeed * 1000)
-    },
-
     countNeighbours(grid, x, y) {
 
         var sum = 0
@@ -186,6 +357,12 @@ const game = {
         return sum - grid[x][y]
     },
 
+    isSnakeFree: function name(x, y) {
+
+        return this.tails[x + '|' + y]
+
+    },
+
     runFrame: function () {
 
         var startDotCount = this.dotCount
@@ -202,22 +379,7 @@ const game = {
                 if (!this.field[x][y] && count == this.conf.maxLimit) {
                     field[x][y] = 1
                 } else if (this.field[x][y] && (count < this.conf.minLimit || count > this.conf.maxLimit)) {
-
                     field[x][y] = 0
-                    // check if there is snake part, if so, remove
-
-                    var broke = false;
-                    for (var i in this.snake.tail) {
-                        var item = this.snake.tail[i]
-
-                        if (broke || (item.x == x && item.y == y)) {
-                            // delete this.snake.tail[i]
-                            //broke = true
-                        }
-
-                    }
-
-
                 } else {
                     field[x][y] = this.field[x][y]
                 }
@@ -227,13 +389,8 @@ const game = {
         this.field = field;
         this.drawField(this.field)
 
-        // draw snake
-        for (var i in this.snake.tail) {
-
-            var item = this.snake.tail[i]
-            this.drawSnakeDot(item.x, item.y)
-
-        }
+        // draw snakes
+        this.drawSnakes()
 
         var endDotCount = this.dotCount
 
@@ -241,43 +398,68 @@ const game = {
 
     },
 
-    moveSnake: function () {
+    drawSnakes: function () {
+
+        this.snakes.forEach(snake => {
+            this.drawSnake(snake)
+        });
+
+    },
+
+    drawSnake: function (snake) {
+
+        for (var i in snake.tail) {
+            var item = snake.tail[i]
+            this.drawSnakeDot(snake, item.x, item.y)
+        }
+
+    },
+
+    moveSnakes: function () {
+
+        this.snakes.forEach(element => {
+
+            this.moveSnake(element)
+
+        });
+
+    },
+
+    moveSnake: function (snake) {
 
         // move snake
-        if (this.snake.direction) {
+        if (snake.direction) {
 
-            if (this.snake.direction == 'right') {
+            if (snake.direction == 'right') {
 
-                this.snake.x += 1;
-                this.snake.x = this.snake.x > this.conf.cols ? 0 : this.snake.x
+                snake.x += 1;
+                snake.x = snake.x > this.conf.cols - 1 ? 0 : snake.x
 
-            } else if (this.snake.direction == 'left') {
+            } else if (snake.direction == 'left') {
 
-                this.snake.x -= 1;
-                this.snake.x = this.snake.x < 0 ? this.conf.cols : this.snake.x
+                snake.x -= 1;
+                snake.x = snake.x < 0 ? this.conf.cols - 1 : snake.x
 
-            } else if (this.snake.direction == 'up') {
-                this.snake.y -= 1;
-                this.snake.y = this.snake.y < 0 ? this.conf.rows : this.snake.y
+            } else if (snake.direction == 'up') {
+                snake.y -= 1;
+                snake.y = snake.y < 0 ? this.conf.rows - 1 : snake.y
 
 
-            } else if (this.snake.direction == 'down') {
+            } else if (snake.direction == 'down') {
 
-                this.snake.y += 1;
-                this.snake.y = this.snake.y > this.conf.rows ? 0 : this.snake.y
+                snake.y += 1;
+                snake.y = snake.y > this.conf.rows ? 0 : snake.y
 
             }
 
-            //delete this.snake.tail[this.snake.tail.length]
-
             var collided = false
             // check if we collide with ourself
-            for (var i in this.snake.tail) {
-                var item = this.snake.tail[i]
+            for (var i in snake.tail) {
+                var item = snake.tail[i]
 
-                if (item.x == this.snake.x && item.y == this.snake.y) {
+                if (item.x == snake.x && item.y == snake.y) {
 
-                    this.deleteSnake(this.snake)
+                    this.deleteSnake(snake)
                     collided = true
                     break
                 }
@@ -286,15 +468,18 @@ const game = {
 
             if (!collided) {
 
-                this.snake.tail[this.snake.tail.length] = {
-                    x: this.snake.x,
-                    y: this.snake.y
+                snake.tail[snake.tail.length] = {
+                    x: snake.x,
+                    y: snake.y
                 }
 
-                if (this.field[this.snake.x][this.snake.y]) { // i ate smthing
+                this.tails[snake.x + '|' + snake.y] = 1
+
+                if (this.field[snake.x][snake.y]) { // i ate smthing
 
                 } else { // i moved
-                    this.snake.tail.shift()
+                    item = snake.tail.shift()
+                    delete this.tails[item.x + '|' + item.y]
                 }
 
             }
@@ -305,18 +490,17 @@ const game = {
 
         // draw head
 
-        this.field[this.snake.x][this.snake.y] = 1;
-        this.drawSnakeDot(this.snake.x, this.snake.y)
+        this.field[snake.x][snake.y] = 1;
+        this.drawSnakeDot(snake, snake.x, snake.y)
 
         // draw tail
-        for (var i in this.snake.tail) {
+        for (var i in snake.tail) {
 
-            var item = this.snake.tail[i]
-            this.drawSnakeDot(item.x, item.y)
+            var item = snake.tail[i]
+            this.drawSnakeDot(snake, item.x, item.y)
 
         }
 
-        console.log('Tail: ' + this.snake.tail.length)
 
     },
 
@@ -325,13 +509,23 @@ const game = {
 
         for (var i in snake.tail) {
 
-            var item = this.snake.tail[i]
+            var item = snake.tail[i]
             this.field[item.x][item.y] = 1
 
         }
 
         snake.tail = []
 
+    },
+
+    createSnake: function () {
+        return {
+            x: Math.round(Math.random() * this.conf.cols),
+            y: Math.round(Math.random() * this.conf.rows),
+            direction: '',
+            tail: [],
+
+        }
     },
 
     drawField: function (field) {
@@ -370,10 +564,10 @@ const game = {
 
     },
 
-    drawSnakeDot: function (x, y) {
+    drawSnakeDot: function (snake, x, y) {
 
-        color = this.conf.snakeColor
-        this.ctx.fillStyle = 'yellow';
+        color = snake.bot ? this.conf.botSnakeColor : this.conf.snakeColor
+        this.ctx.fillStyle = color;
         this.ctx.fillRect(x * this.conf.resolution, y * this.conf.resolution, 1 * this.conf.resolution, 1 * this.conf.resolution)
 
     },
