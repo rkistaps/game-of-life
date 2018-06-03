@@ -1,8 +1,9 @@
 window.onload = function () {
 
     game.init({
-        // dotColor: 'black',
-        // fieldColor: 'red'
+        dotColor: 'black',
+        fieldColor: 'red',
+        botSnakeColor: 'blue'
 
     }).start()
 
@@ -13,18 +14,22 @@ const game = {
     conf: {
         startingDotCount: 50,
         cols: 100,
-        rows: 75,
-        speed: 0.05,
+        rows: 70,
+        speed: 0.1,
         minLimit: 2,
         maxLimit: 3,
         resolution: 10,
         dotColor: '#89aa9e',
         fieldColor: '#193549',
-        snakeSpeed: 0.05,
+        snakeSpeed: 0.1,
         snakeColor: '#a5ff90',
         botSnakeColor: 'black',
-        botSnakeCount: 2,
-        botReaction: 0.1
+        botSnakeCount: 1,
+        botReaction: 0.01,
+        bot: {
+            dirChangeRand: 0.1,
+            dangerLevel: 10
+        }
 
     },
 
@@ -32,7 +37,10 @@ const game = {
         x: 0,
         y: 0,
         direction: '',
-        tail: []
+        tail: [],
+        path: [],
+
+
     },
 
     snakes: [],
@@ -79,6 +87,7 @@ const game = {
             this.snakes.push(snake)
         }
 
+        this.snake = this.createSnake()
         this.snakes.push(this.snake)
 
         return this
@@ -103,112 +112,222 @@ const game = {
 
     },
 
+    closestDanger: function (direction, x, y) {
+
+        start_x = x
+        start_y = y
+        var coordsToCheck = []
+        if (direction == 'up') {
+
+            do {
+                y = this.fixYCoord(y - 1)
+                coordsToCheck.push({
+                    x: x,
+                    y: y
+                })
+            } while (y != start_y)
+
+        } else if (direction == 'down') {
+
+            do {
+                y = this.fixYCoord(y + 1)
+                coordsToCheck.push({
+                    x: x,
+                    y: y
+                })
+            } while (y != start_y)
+
+        } else if (direction == 'right') {
+
+            do {
+                x = this.fixXCoord(x + 1)
+                coordsToCheck.push({
+                    x: x,
+                    y: y
+                })
+            } while (x != start_x)
+
+        } else if (direction == 'left') {
+
+            do {
+                x = this.fixXCoord(x - 1)
+                coordsToCheck.push({
+                    x: x,
+                    y: y
+                })
+            } while (x != start_x)
+
+        }
+
+
+        for (var i in coordsToCheck) {
+
+            coords = coordsToCheck[i]
+            if (!this.isSnakeFree(coords.x, coords.y)) {
+                return parseInt(i) + 1
+            }
+
+        }
+
+        return 0
+
+    },
+
+    isDangerAhead: function (direction, x, y) {
+
+        // console.log('---------')
+        // console.log(direction)
+        // console.log(x, y)
+        start_x = x
+        start_y = y
+
+        var coordsToCheck = []
+        for (var i = 0; i < this.conf.bot.dangerLevel; i++) {
+
+            if (direction == 'up') {
+                y -= 1
+            } else if (direction == 'right') {
+                x += 1
+            } else if (direction == 'down') {
+                y += 1
+            } else if (direction == 'left') {
+                x -= 1
+            }
+
+            coordsToCheck.push({
+                x: this.fixXCoord(x),
+                y: this.fixYCoord(y)
+            })
+
+        }
+
+        // console.log(coordsToCheck);
+
+        for (var i in coordsToCheck) {
+            var coord = coordsToCheck[i]
+
+            if (!this.isSnakeFree(coord.x, coord.y)) {
+
+                return parseInt(i) + 1
+
+            }
+
+        }
+
+        return 0
+
+    },
+
     processBots: function () {
 
         this.snakes.forEach(snake => {
 
-            if (snake.bot) {
+            if (snake.bot && !snake.directionChanged) {
 
                 if (snake.direction) {
 
-                    if (snake.direction == 'right') {
+                    x = this.isDangerAhead(snake.direction, snake.x, snake.y)
 
-                        var x = this.fixXCoord(snake.x + 1);
-                        if (!this.isSnakeFree(x, snake.y)) {
+                    if (x > 0) {
 
-                            var y = this.fixYCoord(snake.y + 1)
-                            if (this.isSnakeFree(x, y)) { // up
-                                snake.direction = 'up'
-                            } else { // down
-                                snake.direction = 'down'
-                            }
+                        // console.log('Starting direction: ' + snake.direction)
+                        // console.log('Path: ', snake.path)
 
-                        } else {
-                            if (this.rand(1, 10) > 7) {
+                        if (snake.direction == 'up' || snake.direction == 'down') {
 
-                                if (this.rand(0, 1)) {
-                                    snake.direction = 'up'
-                                } else {
-                                    snake.direction = 'down'
-                                }
+                            var danger1 = this.isDangerAhead('right', snake.x, snake.y)
+                            var danger2 = this.isDangerAhead('left', snake.x, snake.y)
 
-                            }
-                        }
+                            // console.log(danger1)
+                            // console.log(danger2)
 
-                    } else if (snake.direction == 'left') {
-
-                        var x = this.fixXCoord(snake.x - 1);
-                        if (!this.isSnakeFree(x, snake.y)) {
-
-                            var y = this.fixYCoord(snake.y + 1)
-                            if (this.isSnakeFree(x, y)) { // up
-                                snake.direction = 'up'
-                            } else { // down
-                                snake.direction = 'down'
-                            }
-
-                        } else {
-                            if (this.rand(1, 10) > 7) {
-
-                                if (this.rand(0, 1)) {
-                                    snake.direction = 'up'
-                                } else {
-                                    snake.direction = 'down'
-                                }
-
-                            }
-                        }
-
-                    } else if (snake.direction == 'down') {
-
-                        var y = this.fixYCoord(snake.y - 1)
-                        if (!this.isSnakeFree(snake.x, y)) {
-
-                            var x = this.fixXCoord(snake.x + 1)
-                            if (this.isSnakeFree(x, y)) {
+                            if (danger1 == 0) {
                                 snake.direction = 'right'
-                            } else {
+                                snake.directionChanged = true
+                            } else if (danger2 == 0) {
                                 snake.direction = 'left'
+                                snake.directionChanged = true
+                            } else if (danger1 < danger2) {
+                                snake.direction = 'left'
+                                snake.directionChanged = true
+                            } else if (danger1 > danger2) {
+                                snake.direction = 'right'
+                                snake.directionChanged = true
+                            } else {
+                                snake.direction = Math.random > 0.5 ? 'right' : 'left'
+                                snake.directionChanged = true
                             }
 
-                        } else {
-                            if (this.rand(1, 10) > 7) {
+                        } else { // right or left
 
-                                if (this.rand(0, 1)) {
-                                    snake.direction = 'right'
-                                } else {
-                                    snake.direction = 'left'
-                                }
+                            var danger1 = this.isDangerAhead('up', snake.x, snake.y)
+                            var danger2 = this.isDangerAhead('down', snake.x, snake.y)
 
+                            if (danger1 == 0) {
+                                snake.direction = 'up'
+                                snake.directionChanged = true
+                            } else if (danger2 == 0) {
+                                snake.direction = 'down'
+                                snake.directionChanged = true
+                            } else if (danger1 < danger2) {
+                                snake.direction = 'down'
+                                snake.directionChanged = true
+                            } else if (danger1 > danger2) {
+                                snake.direction = 'up'
+                                snake.directionChanged = true
+                            } else {
+                                snake.direction = Math.random > 0.5 ? 'down' : 'up'
+                                snake.directionChanged = true
                             }
+
                         }
 
-                    } else if (snake.direction == 'up') {
+                        // console.log('End direction: ' + snake.direction)
 
-                        var y = this.fixYCoord(snake.y + 1)
-                        if (!this.isSnakeFree(snake.x, y)) {
+                    } else { // no danger
 
-                            var x = this.fixXCoord(snake.x + 1)
-                            if (this.isSnakeFree(x, y)) {
-                                snake.direction = 'right'
-                            } else {
-                                snake.direction = 'left'
-                            }
+                        rand = Math.random()
+                        if (this.conf.bot.dirChangeRand > rand) {
 
-                        } else {
-                            if (this.rand(1, 10) > 7) {
+                            if (snake.direction == 'up' || snake.direction == 'down') {
 
-                                if (this.rand(0, 1)) {
+                                dang1 = this.closestDanger('right', snake.x, snake.y)
+                                dang2 = this.closestDanger('left', snake.x, snake.y)
+
+                                if (dang1 == 0 && dang2 == 0) {
+                                    snake.direction = Math.random() > 0.5 ? 'right' : 'left'
+                                } else if (dang1 > dang2) {
                                     snake.direction = 'right'
-                                } else {
+                                } else if (dang1 < dang2) {
                                     snake.direction = 'left'
+                                } else {
+                                    snake.direction = Math.random() > 0.5 ? 'left' : 'right'
+                                }
+
+                            } else {
+
+                                dang1 = this.closestDanger('up', snake.x, snake.y)
+                                dang2 = this.closestDanger('down', snake.x, snake.y)
+
+                                if (dang1 == 0 && dang2 == 0) {
+                                    snake.direction = Math.random() > 0.5 ? 'up' : 'down'
+                                } else if (dang1 > dang2) {
+                                    snake.direction = 'up'
+                                } else if (dang1 < dang2) {
+                                    snake.direction = 'down'
+                                } else {
+                                    snake.direction = Math.random() > 0.5 ? 'up' : 'down'
                                 }
 
                             }
+
+                            snake.directionChanged = true
+
+                        } else {
+                            // console.log('no change')
                         }
 
                     }
-
 
                 } else {
 
@@ -216,16 +335,20 @@ const game = {
                     switch (dir) {
                         case 1:
                             snake.direction = 'right'
+                            snake.directionChanged = true
                             break;
                         case 2:
                             snake.direction = 'down'
+                            snake.directionChanged = true
                             break;
                         case 3:
                             snake.direction = 'left'
+                            snake.directionChanged = true
                             break;
 
                         case 4:
                             snake.direction = 'up'
+                            snake.directionChanged = true
                             break;
                         default:
                             break;
@@ -236,6 +359,36 @@ const game = {
             }
 
         });
+
+    },
+
+    changeDirectionIfFree(snake, direction) {
+
+        x = snake.x
+        y = snake.y
+
+        switch (direction) {
+            case 'up':
+                y = y + 1
+                break;
+            case 'right':
+                x = x + 1
+                break;
+            case 'down':
+                y = y - 1
+                break;
+            case 'left':
+                x = x - 1
+                break;
+        }
+
+        if (this.isSnakeFree(x, y)) {
+            snake.direction = direction
+            snake.directionChanged = true
+            return true
+        } else {
+            return false
+        }
 
     },
 
@@ -251,14 +404,18 @@ const game = {
     fixYCoord: function (y) {
 
         var y = y < 0 ? this.conf.rows - 1 : y
-        y = y > this.conf.rows ? 0 : y
+        y = y > this.conf.rows - 1 ? 0 : y
 
         return y
 
     },
 
     rand: function (from, to) {
-        return Math.round(from + Math.random() * to)
+
+        ret = Math.round(from + Math.random() * to)
+
+        return parseInt(ret)
+
     },
 
     wireEvents: function () {
@@ -280,6 +437,7 @@ const game = {
                 arrow.up:
                     if (self.snake.direction != 'down') {
                         self.snake.direction = 'up'
+                        self.snake.directionChanged = true
                     }
                     break;
                     e.preventDefault()
@@ -287,6 +445,7 @@ const game = {
                 arrow.down:
                     if (self.snake.direction != 'up') {
                         self.snake.direction = 'down'
+                        self.snake.directionChanged = true
                     }
                     break;
                     e.preventDefault()
@@ -294,6 +453,7 @@ const game = {
                 arrow.left:
                     if (self.snake.direction != 'right') {
                         self.snake.direction = 'left'
+                        self.snake.directionChanged = true
                     }
                     e.preventDefault()
                     break;
@@ -301,6 +461,7 @@ const game = {
                 arrow.right:
                     if (self.snake.direction != 'left') {
                         self.snake.direction = 'right'
+                        self.snake.directionChanged = true
                     }
                     e.preventDefault()
                     break;
@@ -357,9 +518,17 @@ const game = {
         return sum - grid[x][y]
     },
 
-    isSnakeFree: function name(x, y) {
+    isSnakeFree: function (x, y) {
 
-        return this.tails[x + '|' + y]
+        var key = x.toString() + '|' + y.toString()
+
+
+        // console.log('-----')
+        // console.log(key)
+        // console.log(this.tails)
+        // console.log('-----')
+
+        return typeof this.tails[key] == 'undefined' || this.tails[key] == 0
 
     },
 
@@ -448,30 +617,26 @@ const game = {
             } else if (snake.direction == 'down') {
 
                 snake.y += 1;
-                snake.y = snake.y > this.conf.rows ? 0 : snake.y
+                snake.y = snake.y > this.conf.rows - 1 ? 0 : snake.y
 
             }
 
             var collided = false
             // check if we collide with ourself
-            for (var i in snake.tail) {
-                var item = snake.tail[i]
-
-                if (item.x == snake.x && item.y == snake.y) {
-
-                    this.deleteSnake(snake)
-                    collided = true
-                    break
-                }
-
-            }
-
-            if (!collided) {
+            if (!this.isSnakeFree(snake.x, snake.y)) {
+                this.deleteSnake(snake)
+                collided = true
+            } else {
 
                 snake.tail[snake.tail.length] = {
                     x: snake.x,
                     y: snake.y
                 }
+
+                snake.path.push({
+                    x: snake.x,
+                    y: snake.y
+                })
 
                 this.tails[snake.x + '|' + snake.y] = 1
 
@@ -501,6 +666,8 @@ const game = {
 
         }
 
+        snake.directionChanged = false
+
 
     },
 
@@ -510,6 +677,7 @@ const game = {
         for (var i in snake.tail) {
 
             var item = snake.tail[i]
+            delete this.tails[item.x + '|' + item.y]
             this.field[item.x][item.y] = 1
 
         }
@@ -523,8 +691,9 @@ const game = {
             x: Math.round(Math.random() * this.conf.cols),
             y: Math.round(Math.random() * this.conf.rows),
             direction: '',
+            directionChanged: false,
             tail: [],
-
+            path: []
         }
     },
 
