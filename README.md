@@ -24,7 +24,8 @@ way it treats everything else, which is to say without interest.
 
 ## Play
 
-Open `index.html` in a browser. Set how many bots you want, then press
+**[Play it here](https://rkistaps.github.io/game-of-life/)**, or open
+`index.html` in a browser. Set how many bots you want, then press
 **Start single player** — or **Start hotseat** to seat a second player at the
 same keyboard.
 
