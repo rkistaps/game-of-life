@@ -120,10 +120,124 @@
             font-variant-numeric: tabular-nums;
             color: var(--text);
         }
-    </style>
+
+        .hud,
+        .scoreboard {
+            transition: opacity 0.35s ease;
+        }
+
+        body.pre-start .hud,
+        body.pre-start .scoreboard {
+            opacity: 0;
+        }
+
+        /* start overlay */
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: radial-gradient(ellipse at center, rgba(3, 12, 8, 0.72) 0%, rgba(2, 7, 4, 0.94) 100%);
+            backdrop-filter: blur(3px);
+            transition: opacity 0.35s ease;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 28px;
+            border-radius: 14px;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+            user-select: none;
+        }
+
+        .overlay-title {
+            color: var(--text);
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+
+        .overlay-sub {
+            color: var(--text-dim);
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+
+        .overlay-text {
+            color: var(--text-dim);
+            font-size: 12px;
+            line-height: 1.75;
+            margin: 0 0 8px;
+        }
+
+        .overlay-text strong {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .overlay-field {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0 20px;
+        }
+
+        .overlay-label {
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        .overlay-field input[type="range"] {
+            flex: 1;
+            accent-color: #7fd9ab;
+        }
+
+        .overlay-value {
+            width: 18px;
+            text-align: right;
+            color: var(--text);
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .overlay-button {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: 9px;
+            border: 1px solid rgba(127, 217, 171, 0.45);
+            background: rgba(127, 217, 171, 0.12);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .overlay-button:hover {
+            background: rgba(127, 217, 171, 0.22);
+            border-color: rgba(127, 217, 171, 0.7);
+        }
+</style>
 </head>
 
-<body>
+<body class="pre-start">
 
     <canvas width="0" height="0" id="field"></canvas>
     <div class="vignette"></div>
@@ -137,6 +251,28 @@
     <div class="scoreboard panel">
         <div class="scoreboard-title">Scoreboard</div>
         <div id="scoreboard-rows"></div>
+    </div>
+
+    <div class="overlay" id="start-overlay">
+        <div class="overlay-card">
+            <div class="overlay-title">Game of Life</div>
+            <div class="overlay-sub">Snakes &amp; cellular automata</div>
+            <p class="overlay-text">
+                A Conway's Game of Life field breathes underneath you &mdash; cells are born,
+                age and die on their own.
+            </p>
+            <p class="overlay-text">
+                You are the <strong>amber snake</strong>. Steer with the <strong>arrow keys</strong>,
+                eat living cells to grow, and stay clear of every tail &mdash; crash and your body
+                scatters back into the field as fresh life. Outlast the bots and top the scoreboard.
+            </p>
+            <div class="overlay-field">
+                <label class="overlay-label" for="bot-count">Bot snakes</label>
+                <input type="range" id="bot-count" min="0" max="10" step="1" value="1">
+                <span class="overlay-value" id="bot-count-value">1</span>
+            </div>
+            <button class="overlay-button" id="start-button">Start single player</button>
+        </div>
     </div>
 
     <script src="game.js"></script>

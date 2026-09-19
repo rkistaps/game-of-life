@@ -1,5 +1,25 @@
 window.onload = function () {
-  game.init().start();
+  // the field simulates behind the start overlay; snakes only join on start
+  game.init().startLife();
+
+  var overlay = document.getElementById("start-overlay");
+  var botCount = document.getElementById("bot-count");
+  var botCountValue = document.getElementById("bot-count-value");
+  var startButton = document.getElementById("start-button");
+
+  botCount.oninput = function () {
+    botCountValue.textContent = botCount.value;
+  };
+
+  startButton.onclick = function () {
+    game.conf.botSnakeCount = parseInt(botCount.value, 10);
+    game.spawnSnakes();
+    game.startSnakes();
+
+    overlay.classList.add("hidden");
+    document.body.classList.remove("pre-start");
+    startButton.blur();
+  };
 };
 
 const game = {
@@ -84,9 +104,13 @@ const game = {
 
     this.wireEvents();
 
+    return this;
+  },
+
+  spawnSnakes: function () {
     // create bot snakes
     for (var i = 0; i < this.conf.botSnakeCount; i++) {
-      snake = this.createSnake();
+      var snake = this.createSnake();
       snake.bot = 1;
       snake.label = "Bot " + (i + 1);
       this.snakes.push(snake);
@@ -102,19 +126,33 @@ const game = {
   },
 
   start: function (conf) {
+    this.startLife();
+    this.startSnakes();
+  },
+
+  // the cellular automaton, which runs with or without snakes on the field
+  startLife: function () {
     const self = this;
 
     this.interval = setInterval(function () {
       self.runFrame();
     }, self.conf.speed * 1000);
 
+    return this;
+  },
+
+  startSnakes: function () {
+    const self = this;
+
     this.snakeInterval = setInterval(function () {
       self.moveSnakes();
     }, self.conf.snakeSpeed * 1000);
 
-    this.snakeInterval = setInterval(function () {
+    this.botInterval = setInterval(function () {
       self.processBots();
     }, self.conf.botReaction * 1000);
+
+    return this;
   },
 
   closestDanger: function (direction, x, y) {
