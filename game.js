@@ -6,19 +6,28 @@ window.onload = function () {
   var botCount = document.getElementById("bot-count");
   var botCountValue = document.getElementById("bot-count-value");
   var startButton = document.getElementById("start-button");
+  var hotseatButton = document.getElementById("hotseat-button");
 
   botCount.oninput = function () {
     botCountValue.textContent = botCount.value;
   };
 
-  startButton.onclick = function () {
+  function startGame(playerCount, button) {
     game.conf.botSnakeCount = parseInt(botCount.value, 10);
-    game.spawnSnakes();
+    game.spawnSnakes(playerCount);
     game.startSnakes();
 
     overlay.classList.add("hidden");
     document.body.classList.remove("pre-start");
-    startButton.blur();
+    button.blur();
+  }
+
+  startButton.onclick = function () {
+    startGame(1, startButton);
+  };
+
+  hotseatButton.onclick = function () {
+    startGame(2, hotseatButton);
   };
 };
 
@@ -37,6 +46,7 @@ const game = {
     maxCellAge: 22,
     snakeSpeed: 0.1,
     snakeColor: "#ffb454",
+    playerColors: ["#ffb454", "#54d8ff"],
     botSnakeColor: "#ff5470",
     botSnakeCount: 1,
     botReaction: 0.01,
@@ -54,7 +64,14 @@ const game = {
     path: [],
   },
 
+  // one control map per human player, in seating order
+  controls: [
+    { up: 38, down: 40, left: 37, right: 39 },
+    { up: 87, down: 83, left: 65, right: 68 },
+  ],
+
   snakes: [],
+  players: [],
   tails: [],
   field: [],
   age: [],
@@ -111,18 +128,29 @@ const game = {
     return this;
   },
 
-  spawnSnakes: function () {
+  spawnSnakes: function (playerCount) {
+    playerCount = playerCount || 1;
+    // never seat more players than we have control maps for
+    playerCount = Math.min(playerCount, this.controls.length);
+
     // create bot snakes
     for (var i = 0; i < this.conf.botSnakeCount; i++) {
-      var snake = this.createSnake();
-      snake.bot = 1;
-      snake.label = "Bot " + (i + 1);
-      this.snakes.push(snake);
+      var bot = this.createSnake();
+      bot.bot = 1;
+      bot.label = "Bot " + (i + 1);
+      bot.color = this.conf.botSnakeColor;
+      this.snakes.push(bot);
     }
 
-    this.snake = this.createSnake();
-    this.snake.label = "You";
-    this.snakes.push(this.snake);
+    for (var p = 0; p < playerCount; p++) {
+      var player = this.createSnake();
+      player.label = playerCount > 1 ? "Player " + (p + 1) : "You";
+      player.color = this.conf.playerColors[p] || this.conf.snakeColor;
+      this.players.push(player);
+      this.snakes.push(player);
+    }
+
+    this.snake = this.players[0];
 
     this.updateScoreboard();
 
@@ -425,50 +453,44 @@ const game = {
 
     document.onkeydown = function (e) {
       var keyCode = e.keyCode || e.which,
-        arrow = {
-          left: 37,
-          up: 38,
-          right: 39,
-          down: 40,
-        },
         keyP = 80;
 
-      switch (keyCode) {
-        case keyP:
-          self.togglePause();
-          e.preventDefault();
-          break;
-        case arrow.up:
-          if (self.snake.direction != "down") {
-            self.snake.direction = "up";
-            self.snake.directionChanged = true;
+      if (keyCode == keyP) {
+        self.togglePause();
+        e.preventDefault();
+        return;
+      }
+
+      // arrows drive player 1, wasd drives the hotseat player
+      for (var i = 0; i < self.players.length; i++) {
+        var map = self.controls[i];
+        if (!map) continue;
+
+        for (var direction in map) {
+          if (map[direction] == keyCode) {
+            self.turnSnake(self.players[i], direction);
+            e.preventDefault();
+            return;
           }
-          break;
-          e.preventDefault();
-        case arrow.down:
-          if (self.snake.direction != "up") {
-            self.snake.direction = "down";
-            self.snake.directionChanged = true;
-          }
-          break;
-          e.preventDefault();
-        case arrow.left:
-          if (self.snake.direction != "right") {
-            self.snake.direction = "left";
-            self.snake.directionChanged = true;
-          }
-          e.preventDefault();
-          break;
-        case arrow.right:
-          if (self.snake.direction != "left") {
-            self.snake.direction = "right";
-            self.snake.directionChanged = true;
-          }
-          e.preventDefault();
-          break;
+        }
       }
     };
   },
+
+  snakeColorFor: function (snake) {
+    return snake.bot ? this.conf.botSnakeColor : this.conf.snakeColor;
+  },
+
+  turnSnake: function (snake, direction) {
+    var opposite = { up: "down", down: "up", left: "right", right: "left" };
+
+    // a snake cannot double back into its own neck
+    if (snake.direction == opposite[direction]) return;
+
+    snake.direction = direction;
+    snake.directionChanged = true;
+  },
+
 
   togglePause: function () {
     // nothing to pause while the start overlay is still up
@@ -606,7 +628,7 @@ const game = {
     var rows = this.snakes.map(function (s) {
       return {
         label: s.label,
-        color: s.bot ? self.conf.botSnakeColor : self.conf.snakeColor,
+        color: s.color || self.snakeColorFor(s),
         length: s.tail.length + 1,
       };
     });
@@ -793,7 +815,7 @@ const game = {
 
   drawSnakeDot: function (snake, x, y, alpha) {
     alpha = typeof alpha == "undefined" ? 1 : alpha;
-    var color = snake.bot ? this.conf.botSnakeColor : this.conf.snakeColor;
+    var color = snake.color || this.snakeColorFor(snake);
     var res = this.conf.resolution;
     var sprite = this.getGlowSprite(color);
 

@@ -235,6 +235,20 @@
             border-color: rgba(127, 217, 171, 0.7);
         }
 
+        .overlay-button.secondary {
+            margin-top: 8px;
+            background: transparent;
+            border-color: rgba(127, 217, 171, 0.22);
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        .overlay-button.secondary:hover {
+            background: rgba(127, 217, 171, 0.1);
+            border-color: rgba(127, 217, 171, 0.45);
+            color: var(--text);
+        }
+
         .overlay-note {
             margin-top: 14px;
             text-align: center;
@@ -252,6 +266,7 @@
 
         kbd {
             display: inline-block;
+            margin: 0 1px;
             padding: 1px 5px;
             border-radius: 4px;
             border: 1px solid rgba(127, 217, 171, 0.35);
@@ -296,12 +311,17 @@
                 eat living cells to grow, and stay clear of every tail &mdash; crash and your body
                 scatters back into the field as fresh life. Outlast the bots and top the scoreboard.
             </p>
+            <p class="overlay-text">
+                In <strong>hotseat</strong>, a second player shares the keyboard and takes the
+                <strong>cyan snake</strong> on <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>.
+            </p>
             <div class="overlay-field">
                 <label class="overlay-label" for="bot-count">Bot snakes</label>
                 <input type="range" id="bot-count" min="0" max="10" step="1" value="1">
                 <span class="overlay-value" id="bot-count-value">1</span>
             </div>
             <button class="overlay-button" id="start-button">Start single player</button>
+            <button class="overlay-button secondary" id="hotseat-button">Start hotseat &mdash; two players</button>
             <div class="overlay-note">Press <kbd>P</kbd> at any time to pause the game.</div>
         </div>
     </div>

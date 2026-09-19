@@ -18,14 +18,19 @@ finally cross your own body you come apart into loose cells, and the automaton
 takes you back without comment, and something else in the pattern starts moving.
 
 Others have stood up since. They are faster to react than you and they never get
-bored, but they only see ten cells ahead. You can see the whole field.
+bored, but they only see ten cells ahead. You can see the whole field. And
+nothing prevents two wills from sharing one keyboard — the field treats that the
+way it treats everything else, which is to say without interest.
 
 ## Play
 
-Open `index.html` in a browser. Set how many bots you want and press
-**Start single player**.
+Open `index.html` in a browser. Set how many bots you want, then press
+**Start single player** — or **Start hotseat** to seat a second player at the
+same keyboard.
 
-- **Arrow keys** — steer
+- **Arrow keys** — player one, the amber snake
+- **W A S D** — player two, the cyan snake (hotseat only)
+- **P** — pause; the scoreboard comes up while the field holds still
 - Cross any tail, including your own, and you dissolve back into the field
 - Edges wrap; there is no corner to hide in
 
