@@ -67,6 +67,8 @@ const game = {
   hudGen: null,
   hudPop: null,
   interval: null,
+  started: false,
+  paused: false,
 
   init: function (conf) {
     this.conf = Object.assign(this.conf, conf);
@@ -88,6 +90,8 @@ const game = {
     this.hudGen = document.getElementById("hud-gen");
     this.hudPop = document.getElementById("hud-pop");
     this.scoreboardRows = document.getElementById("scoreboard-rows");
+    this.pauseOverlay = document.getElementById("pause-overlay");
+    this.pauseScoreboardRows = document.getElementById("pause-scoreboard-rows");
 
     // fill field
     for (var x = 0; x < this.conf.cols; x++) {
@@ -128,6 +132,7 @@ const game = {
   start: function (conf) {
     this.startLife();
     this.startSnakes();
+    this.paused = false;
   },
 
   // the cellular automaton, which runs with or without snakes on the field
@@ -151,6 +156,8 @@ const game = {
     this.botInterval = setInterval(function () {
       self.processBots();
     }, self.conf.botReaction * 1000);
+
+    this.started = true;
 
     return this;
   },
@@ -423,9 +430,14 @@ const game = {
           up: 38,
           right: 39,
           down: 40,
-        };
+        },
+        keyP = 80;
 
       switch (keyCode) {
+        case keyP:
+          self.togglePause();
+          e.preventDefault();
+          break;
         case arrow.up:
           if (self.snake.direction != "down") {
             self.snake.direction = "up";
@@ -458,15 +470,36 @@ const game = {
     };
   },
 
+  togglePause: function () {
+    // nothing to pause while the start overlay is still up
+    if (!this.started) return;
+
+    if (this.paused) {
+      this.resume();
+    } else {
+      this.pause();
+    }
+  },
+
   pause: function () {
     clearInterval(this.interval);
+    clearInterval(this.snakeInterval);
+    clearInterval(this.botInterval);
+
+    this.paused = true;
+
+    if (this.pauseScoreboardRows)
+      this.pauseScoreboardRows.innerHTML = this.scoreboardHtml();
+    if (this.pauseOverlay) this.pauseOverlay.classList.remove("hidden");
   },
 
   resume: function () {
-    const self = this;
-    this.interval = setInterval(function () {
-      self.runFrame();
-    }, this.conf.speed * 1000);
+    this.startLife();
+    if (this.started) this.startSnakes();
+
+    this.paused = false;
+
+    if (this.pauseOverlay) this.pauseOverlay.classList.add("hidden");
   },
 
   changeSpeed: function (speed) {
@@ -565,6 +598,10 @@ const game = {
   updateScoreboard: function () {
     if (!this.scoreboardRows) return;
 
+    this.scoreboardRows.innerHTML = this.scoreboardHtml();
+  },
+
+  scoreboardHtml: function () {
     var self = this;
     var rows = this.snakes.map(function (s) {
       return {
@@ -590,7 +627,7 @@ const game = {
         "</div>";
     }
 
-    this.scoreboardRows.innerHTML = html;
+    return html;
   },
 
   drawSnakes: function () {

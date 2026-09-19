@@ -234,6 +234,36 @@
             background: rgba(127, 217, 171, 0.22);
             border-color: rgba(127, 217, 171, 0.7);
         }
+
+        .overlay-note {
+            margin-top: 14px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 10px;
+            opacity: 0.85;
+        }
+
+        .overlay-hint {
+            margin-top: 20px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 11px;
+        }
+
+        kbd {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(127, 217, 171, 0.35);
+            background: rgba(127, 217, 171, 0.1);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 10px;
+        }
+
+        .pause-board {
+            padding-top: 2px;
+        }
 </style>
 </head>
 
@@ -272,6 +302,16 @@
                 <span class="overlay-value" id="bot-count-value">1</span>
             </div>
             <button class="overlay-button" id="start-button">Start single player</button>
+            <div class="overlay-note">Press <kbd>P</kbd> at any time to pause the game.</div>
+        </div>
+    </div>
+
+    <div class="overlay hidden" id="pause-overlay">
+        <div class="overlay-card">
+            <div class="overlay-title">Paused</div>
+            <div class="overlay-sub">The field is holding its breath</div>
+            <div class="pause-board" id="pause-scoreboard-rows"></div>
+            <div class="overlay-hint">Press <kbd>P</kbd> to resume</div>
         </div>
     </div>
 
